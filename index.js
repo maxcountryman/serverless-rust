@@ -50,7 +50,7 @@ class RustPlugin {
     this.serverless.service.package.excludeDevDependencies = false;
   }
 
-  runDocker(funcArgs, cargoPackage, binary, profile) {
+  runDocker(funcArgs, cargoPackage, binary, profile, debugInfo) {
     const cargoHome = process.env.CARGO_HOME || path.join(homedir(), ".cargo");
     const cargoRegistry = path.join(cargoHome, "registry");
     const cargoDownloads = path.join(cargoHome, "git");
@@ -73,6 +73,9 @@ class RustPlugin {
     if (profile) {
       // release or dev
       customArgs.push("-e", `PROFILE=${profile}`);
+    }
+    if (debugInfo) {
+      customArgs.push("-e", `DEBUGINFO=${debugInfo}`);
     }
     if (cargoPackage != undefined) {
       if (cargoFlags) {
@@ -121,7 +124,8 @@ class RustPlugin {
       }
       this.serverless.cli.log(`Building native Rust ${func.handler} func...`);
       let profile = (func.rust || {}).profile || this.custom.profile;
-      const res = this.runDocker(func.rust, cargoPackage, binary, profile);
+      let debugInfo = (func.rust || {}).debugInfo || this.custom.debugInfo;
+      const res = this.runDocker(func.rust, cargoPackage, binary, profile, debugInfo);
       if (res.error || res.status > 0) {
         this.serverless.cli.log(
           `Dockerized Rust build encountered an error: ${res.error} ${res.status}.`
